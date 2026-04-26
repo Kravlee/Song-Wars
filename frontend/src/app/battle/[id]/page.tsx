@@ -538,7 +538,7 @@ export default function BattlePage() {
                 {phase === 'battle' ? '🔥 BATTLE' :
                  phase === 'preview' ? '🎵 PREVIEW' :
                  phase === 'voting' ? '🗳️ VOTING' :
-                 phase === 'results' ? '🏆 RESULTS' : phase.toUpperCase()}
+                 phase === 'results' ? '🏆 RESULTS' : (phase as string).toUpperCase()}
               </span>
             </div>
           </div>
