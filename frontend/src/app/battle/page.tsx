@@ -20,8 +20,8 @@ export default function MyBattlesPage() {
 
   const load = useCallback(async () => {
     try {
-      const data = await api.users.recent()
-      setBattles(data)
+      const { battles } = await api.users.recent()
+      setBattles(battles)
     } catch {
       setBattles([])
     } finally {
