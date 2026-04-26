@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: Song-Wars
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    rootDir: frontend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: http://localhost:3001/api
+      - key: NEXT_PUBLIC_SOCKET_URL
+        value: https://song-wars.onrender.com
