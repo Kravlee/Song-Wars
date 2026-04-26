@@ -7,9 +7,8 @@ import { api, RecentBattle } from '@/lib/api'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 
-function ResultBadge({ result }: { result: RecentBattle['result'] }) {
-  if (result === 'win') return <span className="badge badge-results text-xs">WIN</span>
-  if (result === 'loss') return <span className="badge badge-battle text-xs">LOSS</span>
+function ResultBadge({ isWinner }: { isWinner: boolean }) {
+  if (isWinner) return <span className="badge badge-results text-xs">WIN</span>
   return <span className="badge badge-preview text-xs">PLAYED</span>
 }
 
@@ -87,11 +86,11 @@ export default function MyBattlesPage() {
                     {battles.map((battle) => (
                       <tr key={battle.id} className="hover:bg-gray-800/40 transition-colors">
                         <td className="px-5 py-4">
-                          <span className="text-white font-semibold text-sm">{battle.lobbyName}</span>
+                          <span className="text-white font-semibold text-sm">{battle.name}</span>
                         </td>
                         <td className="px-5 py-4">
                           <span className="text-gray-400 text-sm">
-                            {new Date(battle.date).toLocaleDateString([], {
+                            {new Date(battle.createdAt).toLocaleDateString([], {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',
@@ -100,11 +99,11 @@ export default function MyBattlesPage() {
                         </td>
                         <td className="px-5 py-4">
                           <span className="text-gray-400 text-sm flex items-center gap-1">
-                            <span>👥</span> {battle.players}
+                            <span>👥</span> {battle.playerCount}
                           </span>
                         </td>
                         <td className="px-5 py-4">
-                          <ResultBadge result={battle.result} />
+                          <ResultBadge isWinner={battle.isWinner} />
                         </td>
                       </tr>
                     ))}
