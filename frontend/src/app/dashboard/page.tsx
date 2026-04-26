@@ -139,7 +139,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-up">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8 animate-slide-up">
           {loadingStats ? (
             <>
               {[...Array(4)].map((_, i) => (
@@ -172,13 +172,7 @@ export default function DashboardPage() {
                 sub={stats && stats.battles > 0 ? `${stats.wins}/${stats.battles}` : 'No battles yet'}
                 color="blue"
               />
-              <StatCard
-                icon="🎖️"
-                label="Global Rank"
-                value={stats?.rank ? `#${stats.rank}` : '—'}
-                sub={stats?.rank ? 'Keep it up!' : 'Win more battles'}
-                color="green"
-              />
+              
             </>
           )}
         </div>
@@ -417,3 +411,4 @@ export default function DashboardPage() {
     </DashboardLayout>
   )
 }
+
