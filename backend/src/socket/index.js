@@ -295,51 +295,12 @@ function initSocket(server) {
     console.log(`Socket connected: ${socket.id} | User: ${socket.user.username}`);
 
     // ── join-lobby ──────────────────────────────────────────────────────────
-    socket.on('join-lobby', async ({ lobbyId }) => {
-      try {
-        if (!lobbyId) return;
-
-        socket.join(`lobby:${lobbyId}`);
-        console.log(`User ${socket.user.username} socket joined lobby:${lobbyId}`);
-
-        // Small delay to let REST API update DB first
-        setTimeout(async () => {
-          try {
-            const lobby = await prisma.lobby.findUnique({
-              where: { id: lobbyId },
-              include: {
-                host: { select: { id: true, username: true } },
-                players: {
-                  include: {
-                    user: { select: { id: true, username: true } },
-                  },
-                  orderBy: { joinedAt: 'asc' },
-                },
-                submissions: {
-                  include: {
-                    user: { select: { id: true, username: true } },
-                    votes: { select: { id: true, voterId: true } },
-                  },
-                },
-              },
-            });
-
-            if (!lobby) {
-              socket.emit('error', { message: 'Lobby not found' });
-              return;
-            }
-
-            // Send state to all in room
-            io.to(`lobby:${lobbyId}`).emit('lobby-state', { lobby });
-          } catch (queryErr) {
-            console.error(`join-lobby DB error for ${lobbyId}:`, queryErr);
-            socket.emit('error', { message: 'Failed to load lobby' });
-          }
-        }, 150);
-      } catch (err) {
-        console.error('join-lobby error:', err);
-        socket.emit('error', { message: 'Failed to join lobby' });
-      }
+    socket.on('join-lobby', ({ lobbyId }) => {
+      if (!lobbyId) return;
+      socket.join(`lobby:${lobbyId}`);
+      console.log(`User ${socket.user.username} socket joined lobby:${lobbyId}`);
+      // REST API handles DB update and emits via socket
+      // No DB query needed here
     });
 
     // ── leave-lobby ─────────────────────────────────────────────────────────
