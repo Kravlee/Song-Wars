@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  wins      Int      @default(0)
+  battles   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  hostedLobbies Lobby[]
+  lobbyPlayers  LobbyPlayer[]
+  submissions   Submission[]
+  votes         Vote[]
+  chatMessages  ChatMessage[]
+
+  @@map("users")
+}
+
+model Lobby {
+  id                  String    @id @default(cuid())
+  name                String
+  code                String    @unique
+  isPublic            Boolean   @default(true)
+  maxPlayers          Int       @default(8)
+  phase               String    @default("waiting")
+  hostId              String
+  host                User      @relation(fields: [hostId], references: [id])
+  beatUrl             String?
+  beatName            String?
+  timerEnd            DateTime?
+  timerDuration       Int       @default(30)
+  currentPreviewIndex Int       @default(0)
+  createdAt           DateTime  @default(now())
+
+  players      LobbyPlayer[]
+  submissions  Submission[]
+  votes        Vote[]
+  chatMessages ChatMessage[]
+
+  @@index([hostId])
+  @@index([code])
+  @@index([phase])
+  @@map("lobbies")
+}
+
+model LobbyPlayer {
+  id       String   @id @default(cuid())
+  lobbyId  String
+  lobby    Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  isReady  Boolean  @default(false)
+  joinedAt DateTime @default(now())
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId])
+  @@index([userId])
+  @@map("lobby_players")
+}
+
+model Submission {
+  id        String   @id @default(cuid())
+  lobbyId   String
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  fileUrl   String
+  fileName  String
+  createdAt DateTime @default(now())
+
+  votes Vote[]
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId])
+  @@index([userId])
+  @@map("submissions")
+}
+
+model Vote {
+  id           String     @id @default(cuid())
+  submissionId String
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  voterId      String
+  voter        User       @relation(fields: [voterId], references: [id])
+  lobbyId      String
+  lobby        Lobby      @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([lobbyId, voterId])
+  @@index([submissionId])
+  @@index([voterId])
+  @@index([lobbyId])
+  @@map("votes")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  lobbyId   String
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([lobbyId])
+  @@index([userId])
+  @@map("chat_messages")
+}
