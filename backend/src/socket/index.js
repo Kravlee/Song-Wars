@@ -300,42 +300,42 @@ function initSocket(server) {
         if (!lobbyId) return;
 
         socket.join(`lobby:${lobbyId}`);
+        console.log(`User ${socket.user.username} socket joined lobby:${lobbyId}`);
 
-        const lobby = await prisma.lobby.findUnique({
-          where: { id: lobbyId },
-          include: {
-            host: { select: { id: true, username: true } },
-            players: {
+        // Small delay to let REST API update DB first
+        setTimeout(async () => {
+          try {
+            const lobby = await prisma.lobby.findUnique({
+              where: { id: lobbyId },
               include: {
-                user: { select: { id: true, username: true } },
+                host: { select: { id: true, username: true } },
+                players: {
+                  include: {
+                    user: { select: { id: true, username: true } },
+                  },
+                  orderBy: { joinedAt: 'asc' },
+                },
+                submissions: {
+                  include: {
+                    user: { select: { id: true, username: true } },
+                    votes: { select: { id: true, voterId: true } },
+                  },
+                },
               },
-              orderBy: { joinedAt: 'asc' },
-            },
-            submissions: {
-              include: {
-                user: { select: { id: true, username: true } },
-                votes: { select: { id: true, voterId: true } },
-              },
-            },
-          },
-        });
+            });
 
-        if (!lobby) {
-          socket.emit('error', { message: 'Lobby not found' });
-          return;
-        }
+            if (!lobby) {
+              socket.emit('error', { message: 'Lobby not found' });
+              return;
+            }
 
-        // Send full state to this socket only
-        socket.emit('lobby-state', { lobby });
-
-        // Broadcast to others in room
-        socket.to(`lobby:${lobbyId}`).emit('player-joined', {
-          player: {
-            userId: socket.user.id,
-            username: socket.user.username,
-          },
-          players: lobby.players,
-        });
+            // Send state to all in room
+            io.to(`lobby:${lobbyId}`).emit('lobby-state', { lobby });
+          } catch (queryErr) {
+            console.error(`join-lobby DB error for ${lobbyId}:`, queryErr);
+            socket.emit('error', { message: 'Failed to load lobby' });
+          }
+        }, 150);
       } catch (err) {
         console.error('join-lobby error:', err);
         socket.emit('error', { message: 'Failed to join lobby' });
@@ -502,9 +502,6 @@ function initSocket(server) {
     // ── disconnect ───────────────────────────────────────────────────────────
     socket.on('disconnect', async () => {
       console.log(`Socket disconnected: ${socket.id} | User: ${socket.user.username}`);
-      // Rooms are automatically left on disconnect by Socket.IO
-      // No persistent state cleanup needed here since lobby membership
-      // is managed via the REST API (leave endpoint)
     });
   });
 
