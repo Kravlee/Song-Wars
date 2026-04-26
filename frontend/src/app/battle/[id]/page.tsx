@@ -104,7 +104,7 @@ function SubmissionCard({
   isCurrentUser,
   rank,
 }: {
-  submission: Submission
+  submission: BattleSub
   onVote: (id: string) => void
   onPlay: (sub: BattleSub) => void
   voted: string | null
