@@ -3,12 +3,13 @@ services:
     name: Song-Wars
     env: node
     buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
+    startCommand: cd frontend && NODE_ENV=production npm start
     rootDir: frontend
+    port: 3000
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: http://localhost:3001/api
+        value: https://song-wars.onrender.com/api
       - key: NEXT_PUBLIC_SOCKET_URL
         value: https://song-wars.onrender.com
