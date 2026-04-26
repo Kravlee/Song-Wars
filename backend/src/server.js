@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const lobbyRoutes = require('./routes/lobbies');
 const battleRoutes = require('./routes/battles');
 const userRoutes = require('./routes/users');
+const beatRoutes = require('./routes/beats');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/lobbies', lobbyRoutes);
 app.use('/api/battles', battleRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/beats', beatRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

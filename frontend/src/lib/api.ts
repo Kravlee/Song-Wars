@@ -202,6 +202,14 @@ export interface RecentBattle {
   createdAt: string
 }
 
+export interface YouTubeVideo {
+  id: string
+  title: string
+  url: string
+  thumbnail: string
+  duration: string
+}
+
 // ===== API CLIENT =====
 
 export const api = {
@@ -263,5 +271,12 @@ export const api = {
       request<{ stats: UserStats }>('/users/stats'),
     recent: () =>
       request<{ battles: RecentBattle[] }>('/users/recent'),
+  },
+
+  beats: {
+    search: (query: string) =>
+      request<{ videos: YouTubeVideo[] }>(`/beats/search?q=${encodeURIComponent(query)}`),
+    random: () =>
+      request<YouTubeVideo>('/beats/random'),
   },
 }
