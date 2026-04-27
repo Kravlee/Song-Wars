@@ -8,8 +8,11 @@ import { getSocket } from '@/lib/socket'
 import PlayerList from '@/components/lobby/PlayerList'
 import Chat, { ChatMessage } from '@/components/lobby/Chat'
 import UploadArea from '@/components/battle/UploadArea'
+import SpectatorMode from '@/components/battle/SpectatorMode'
+import BeatDownload from '@/components/battle/BeatDownload'
 import Button from '@/components/ui/Button'
 import { showToast, ToastContainer } from '@/components/ui/Toast'
+import { YouTubeVideo } from '@/lib/api'
 
 const TIMER_OPTIONS = [
   { value: 15, label: '15 min' },
@@ -46,7 +49,7 @@ export default function LobbyPage() {
   const [isReady, setIsReady] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showStartModal, setShowStartModal] = useState(false)
-  const [beatFile, setBeatFile] = useState<File | null>(null)
+  const [selectedBeat, setSelectedBeat] = useState<YouTubeVideo | null>(null)
   const [timerDuration, setTimerDuration] = useState(30)
   const [starting, setStarting] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -225,18 +228,18 @@ export default function LobbyPage() {
 
   const handleStartGame = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!beatFile) {
-      showToast('Please upload a beat file.', 'error')
+    if (!selectedBeat) {
+      showToast('Please select a beat.', 'error')
       return
     }
     setStarting(true)
     try {
       const formData = new FormData()
-      formData.append('beat', beatFile)
+      formData.append('beatUrl', selectedBeat.url)
+      formData.append('beatName', selectedBeat.title)
       formData.append('timerDuration', String(timerDuration))
       await api.lobbies.start(lobbyId, formData)
       setShowStartModal(false)
-      // Navigation handled by socket phase-changed event
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to start game.', 'error')
     } finally {
