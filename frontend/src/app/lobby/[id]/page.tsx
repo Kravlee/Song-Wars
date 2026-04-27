@@ -184,7 +184,7 @@ export default function LobbyPage() {
       socket.off('phase-changed')
       socket.off('lobby-closed')
     }
-  }, [mounted, user, lobbyId, addMessage, addSystemMessage, router, lobby, lobbyToPlayers])
+  }, [mounted, user, lobbyId, addMessage, addSystemMessage, router])
 
   if (!mounted || !user) return null
 
@@ -229,6 +229,16 @@ export default function LobbyPage() {
     }
   }
 
+  const handleLeaveLobby = async () => {
+    try {
+      await api.lobbies.leave(lobbyId)
+    } catch (err) {
+      console.error('Error leaving lobby:', err)
+    } finally {
+      router.push('/browse')
+    }
+  }
+
   const handleSendMessage = (message: string) => {
     socketRef.current.emit('chat-message', { lobbyId, message })
     addMessage({
@@ -263,7 +273,7 @@ export default function LobbyPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/browse')}
+              onClick={handleLeaveLobby}
               className="text-gray-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-gray-800"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
