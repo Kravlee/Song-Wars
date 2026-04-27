@@ -116,7 +116,12 @@ export default function LobbyPage() {
     })
 
     socket.on('player-joined', (data: { player: { userId: string; username: string }; players: LobbyPlayer[] }) => {
-      addSystemMessage(`${data.player.username} joined the lobby`)
+      setMessages((prev) => [...prev, {
+        id: Math.random().toString(36).slice(2),
+        type: 'system',
+        content: `${data.player.username} joined the lobby`,
+        timestamp: new Date().toISOString(),
+      }])
       if (data.players && lobby) {
         setPlayers(data.players.map((lp) => toPlayer(lp, lobby.hostId)))
       }
@@ -124,13 +129,23 @@ export default function LobbyPage() {
 
     socket.on('player-left', (data: { userId: string; username: string }) => {
       setPlayers((prev) => prev.filter((p) => p.id !== data.userId))
-      addSystemMessage(`${data.username} left the lobby`)
+      setMessages((prev) => [...prev, {
+        id: Math.random().toString(36).slice(2),
+        type: 'system',
+        content: `${data.username} left the lobby`,
+        timestamp: new Date().toISOString(),
+      }])
     })
 
     socket.on('host-changed', (data: { newHostId: string }) => {
       setLobby((prev) => prev ? { ...prev, hostId: data.newHostId } : prev)
       setPlayers((prev) => prev.map((p) => ({ ...p, isHost: p.id === data.newHostId })))
-      addSystemMessage('Host role transferred.')
+      setMessages((prev) => [...prev, {
+        id: Math.random().toString(36).slice(2),
+        type: 'system',
+        content: 'Host role transferred.',
+        timestamp: new Date().toISOString(),
+      }])
     })
 
     socket.on('lobby-updated', (data: { players: LobbyPlayer[] }) => {
