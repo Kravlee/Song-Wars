@@ -133,11 +133,6 @@ router.post('/:id/vote', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Voting is only allowed during the voting phase' });
     }
 
-    const isInLobby = lobby.players.some((p) => p.userId === req.user.id);
-    if (!isInLobby) {
-      return res.status(403).json({ error: 'You are not in this lobby' });
-    }
-
     const targetSubmission = lobby.submissions.find((s) => s.id === submissionId);
     if (!targetSubmission) {
       return res.status(404).json({ error: 'Submission not found in this lobby' });
@@ -170,13 +165,13 @@ router.post('/:id/vote', authenticate, async (req, res) => {
       },
     });
 
-    // Eligible voters: players who have a submission (participants)
-    // All players can vote except for themselves
-    const totalVotes = updatedLobby.votes.length;
+    // Count only player votes toward auto-finalize (spectator votes are bonuses)
+    const playerIds = new Set(updatedLobby.players.map((p) => p.userId));
+    const playerVoteCount = updatedLobby.votes.filter((v) => playerIds.has(v.voterId)).length;
     const playerCount = updatedLobby.players.length;
 
     // If every player has voted, finalize
-    if (totalVotes >= playerCount) {
+    if (playerVoteCount >= playerCount) {
       try {
         const { getIO, finalizeVoting } = require('../socket');
         const io = getIO();
@@ -194,7 +189,7 @@ router.post('/:id/vote', authenticate, async (req, res) => {
           io.to(`lobby:${id}`).emit('vote-cast', {
             voterId: req.user.id,
             submissionId,
-            totalVotes,
+            totalVotes: playerVoteCount,
             playerCount,
           });
         }

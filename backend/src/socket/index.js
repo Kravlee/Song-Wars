@@ -136,9 +136,10 @@ async function advancePreview(ioInstance, lobbyId, submissions, currentIndex) {
 
 async function startVotingPhase(ioInstance, lobbyId) {
   try {
-    await prisma.lobby.update({
+    const lobby = await prisma.lobby.update({
       where: { id: lobbyId },
       data: { phase: 'voting' },
+      select: { id: true, name: true },
     });
 
     const state = gameStates.get(lobbyId) || {};
@@ -158,6 +159,12 @@ async function startVotingPhase(ioInstance, lobbyId) {
 
     ioInstance.to(`lobby:${lobbyId}`).emit('phase-changed', {
       phase: 'voting',
+    });
+
+    // Notify anyone on the dashboard
+    ioInstance.to('room:dashboard').emit('voting-started', {
+      lobbyId,
+      lobbyName: lobby.name,
     });
   } catch (err) {
     console.error(`startVotingPhase error for lobby ${lobbyId}:`, err);
@@ -400,6 +407,15 @@ function initSocket(server) {
         console.error('request-sync error:', err);
         socket.emit('error', { message: 'Failed to sync lobby state' });
       }
+    });
+
+    // ── join-dashboard / leave-dashboard ─────────────────────────────────────
+    socket.on('join-dashboard', () => {
+      socket.join('room:dashboard');
+    });
+
+    socket.on('leave-dashboard', () => {
+      socket.leave('room:dashboard');
     });
 
     // ── preview-next ─────────────────────────────────────────────────────────

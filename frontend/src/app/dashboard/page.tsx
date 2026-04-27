@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { isLoggedIn, getUser } from '@/lib/auth'
 import { api, UserStats, RecentBattle, AuthUser } from '@/lib/api'
+import { getSocket } from '@/lib/socket'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
@@ -44,6 +45,46 @@ function ResultBadge({ isWinner, submitted }: { isWinner: boolean; submitted: bo
   return <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-700 text-gray-400">JOINED</span>
 }
 
+// Voting notification banner
+function VotingNotification({ lobbyName, lobbyId, onDismiss }: { lobbyName: string; lobbyId: string; onDismiss: () => void }) {
+  const router = useRouter()
+  return (
+    <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-yellow-500/10 border border-yellow-500/50 rounded-2xl p-4 shadow-xl animate-bounce-in">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl">🗳️</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-yellow-300 font-bold text-sm">Voting Started!</p>
+          <p className="text-gray-400 text-xs mt-0.5 truncate">
+            &ldquo;{lobbyName}&rdquo; — cast your vote now
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-gray-500 hover:text-white transition-colors flex-shrink-0"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => { router.push(`/lobby/${lobbyId}`); onDismiss() }}
+          className="flex-1 py-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-xs font-semibold hover:bg-yellow-500/30 transition-all"
+        >
+          Watch &amp; Vote
+        </button>
+        <button
+          onClick={onDismiss}
+          className="px-3 py-1.5 rounded-lg bg-gray-800 text-gray-400 text-xs font-semibold hover:bg-gray-700 transition-all"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -52,6 +93,7 @@ export default function DashboardPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [votingNotification, setVotingNotification] = useState<{ lobbyId: string; lobbyName: string } | null>(null)
   const [form, setForm] = useState<CreateLobbyForm>({
     name: '',
     isPublic: true,
@@ -60,6 +102,7 @@ export default function DashboardPage() {
   })
 
   const user = getUser()
+  const socketRef = useRef(getSocket())
 
   const loadData = useCallback(async () => {
     try {
@@ -84,6 +127,20 @@ export default function DashboardPage() {
     }
     loadData()
   }, [router, loadData])
+
+  // Join dashboard socket room for voting notifications
+  useEffect(() => {
+    if (!mounted) return
+    const socket = socketRef.current
+    socket.emit('join-dashboard')
+    socket.on('voting-started', (data: { lobbyId: string; lobbyName: string }) => {
+      setVotingNotification(data)
+    })
+    return () => {
+      socket.emit('leave-dashboard')
+      socket.off('voting-started')
+    }
+  }, [mounted])
 
   if (!mounted || !user) return null
 
@@ -120,6 +177,13 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {votingNotification && (
+        <VotingNotification
+          lobbyId={votingNotification.lobbyId}
+          lobbyName={votingNotification.lobbyName}
+          onDismiss={() => setVotingNotification(null)}
+        />
+      )}
       <div className="p-8 max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 animate-fade-in">

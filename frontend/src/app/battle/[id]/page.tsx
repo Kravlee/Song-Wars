@@ -499,8 +499,15 @@ export default function BattlePage() {
   }
 
   const isHost = lobby?.hostId === user.id
+  const isPlayer = state.players.some((p) => p.userId === user.id)
   const displayResults = results.length > 0 ? results : submissions.sort((a, b) => b.voteCount - a.voteCount)
   const winner = displayResults[0]
+
+  function getYouTubeEmbedUrl(url: string): string | null {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+    return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : null
+  }
+  const isYouTubeUrl = (url: string) => /youtube\.com|youtu\.be/.test(url)
 
   // ===== LOADING =====
   if (phase === 'loading') {
@@ -570,50 +577,89 @@ export default function BattlePage() {
                   <h2 className="text-white font-bold mb-3 flex items-center gap-2">
                     <span>🥁</span> The Beat
                   </h2>
-                  <AudioPlayer src={beatUrl} title="Battle Beat" username="Host" autoPlay />
-                  <div className="mt-2 text-center">
-                    <a
-                      href={beatUrl}
-                      download="battle-beat"
-                      className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Download Beat
-                    </a>
-                  </div>
+                  {isYouTubeUrl(beatUrl) ? (
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+                      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                        <iframe
+                          src={getYouTubeEmbedUrl(beatUrl) ?? ''}
+                          className="absolute inset-0 w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      <div className="p-3 text-center">
+                        <a
+                          href={beatUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                          Open on YouTube to Download
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <AudioPlayer src={beatUrl} title="Battle Beat" username="Host" autoPlay />
+                      <div className="mt-2 text-center">
+                        <a
+                          href={beatUrl}
+                          download="battle-beat"
+                          className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Download Beat
+                        </a>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Upload section */}
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                <h2 className="font-bold text-white mb-4 flex items-center gap-2">
-                  <span>🎤</span> Submit Your Track
-                </h2>
+              {/* Upload section — only for active players */}
+              {isPlayer && (
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                  <h2 className="font-bold text-white mb-4 flex items-center gap-2">
+                    <span>🎤</span> Submit Your Track
+                  </h2>
 
-                {hasSubmitted ? (
-                  <UploadArea onFileSelect={() => {}} submitted={true} />
-                ) : (
-                  <>
-                    <UploadArea
-                      onFileSelect={(f) => setSelectedFile(f)}
-                      disabled={submitting}
-                    />
-                    <div className="mt-3">
-                      <Button
-                        fullWidth
-                        size="lg"
-                        onClick={handleSubmit}
-                        loading={submitting}
-                        disabled={!selectedFile || submitting}
-                      >
-                        {submitting ? 'Uploading...' : '🚀 Submit Track'}
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
+                  {hasSubmitted ? (
+                    <UploadArea onFileSelect={() => {}} submitted={true} />
+                  ) : (
+                    <>
+                      <UploadArea
+                        onFileSelect={(f) => setSelectedFile(f)}
+                        disabled={submitting}
+                      />
+                      <div className="mt-3">
+                        <Button
+                          fullWidth
+                          size="lg"
+                          onClick={handleSubmit}
+                          loading={submitting}
+                          disabled={!selectedFile || submitting}
+                        >
+                          {submitting ? 'Uploading...' : '🚀 Submit Track'}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Spectator notice during battle */}
+              {!isPlayer && (
+                <div className="bg-gray-900/50 border border-gray-700 rounded-2xl p-5 text-center">
+                  <div className="text-3xl mb-2">👁</div>
+                  <p className="text-gray-400 text-sm font-semibold">You&apos;re spectating this battle</p>
+                  <p className="text-gray-600 text-xs mt-1">Watch as players submit their tracks. Voting opens soon!</p>
+                </div>
+              )}
             </>
           )}
 

@@ -348,7 +348,7 @@ router.post('/:id/leave', authenticate, async (req, res) => {
 router.post('/:id/start', authenticate, beatUpload.single('beat'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { timerDuration } = req.body;
+    const { timerDuration, beatYoutubeUrl, beatTitle } = req.body;
 
     const lobby = await prisma.lobby.findUnique({
       where: { id },
@@ -377,6 +377,11 @@ router.post('/:id/start', authenticate, beatUpload.single('beat'), async (req, r
     if (req.file) {
       beatUrl = await uploadBeat(req.file.buffer, req.file.originalname, req.file.mimetype);
       beatName = req.file.originalname;
+    } else if (beatYoutubeUrl) {
+      beatUrl = beatYoutubeUrl;
+      beatName = beatTitle || 'YouTube Beat';
+    } else {
+      return res.status(400).json({ error: 'Please provide a beat file or select a YouTube beat' });
     }
 
     const parsedTimerDuration = parseInt(timerDuration, 10) || lobby.timerDuration;
