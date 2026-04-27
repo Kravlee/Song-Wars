@@ -304,15 +304,10 @@ function initSocket(server) {
     });
 
     // ── leave-lobby ─────────────────────────────────────────────────────────
+    // Handled by REST API endpoint — no socket emission needed
     socket.on('leave-lobby', ({ lobbyId }) => {
       if (!lobbyId) return;
-
       socket.leave(`lobby:${lobbyId}`);
-
-      socket.to(`lobby:${lobbyId}`).emit('player-left', {
-        userId: socket.user.id,
-        username: socket.user.username,
-      });
     });
 
     // ── chat-message ─────────────────────────────────────────────────────────
